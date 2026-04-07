@@ -1,0 +1,78 @@
+services:
+
+  php:
+    build:
+      context: ./docker/services/php
+      dockerfile: php.dockerfile
+      args:
+        - PHP_VERSION=8.3
+    container_name: app_php
+    working_dir: /var/www
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./app:/var/www
+    networks:
+      - app-network
+
+  nginx:
+    build:
+      context: ./docker/services/nginx
+      dockerfile: nginx.dockerfile
+    container_name: app_nginx
+    working_dir: /var/www
+    volumes:
+      - ./app:/var/www
+    ports:
+      - '80:80'
+    depends_on:
+      - php
+    networks:
+      - app-network
+
+  database:
+    image: mariadb:11.4
+    container_name: app_db
+    restart: unless-stopped
+    volumes:
+      - ./docker/volumes/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '3306:3306'
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: app_pma
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=database
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - '8888:80'
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: app_redis
+    volumes:
+      - ./docker/volumes/redis:/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
