@@ -54,6 +54,7 @@ class CreateServiceOrder extends CreateRecord
                 'device_type_id' => $data['device_type_id'],
                 'device_brand_id' => $data['device_brand_id'],
                 'model' => $data['device_model'],
+                'serial_number' => $data['device_serial_number'] ?? null, // Novo campo
             ]);
         } else {
             $device = Device::create([
@@ -62,6 +63,7 @@ class CreateServiceOrder extends CreateRecord
                 'device_type_id' => $data['device_type_id'],
                 'device_brand_id' => $data['device_brand_id'],
                 'model' => $data['device_model'],
+                'serial_number' => $data['device_serial_number'] ?? null, // Novo campo
             ]);
             $data['device_id'] = $device->id;
         }
@@ -71,7 +73,7 @@ class CreateServiceOrder extends CreateRecord
         // 3. Limpeza de variáveis virtuais para não dar erro na tabela de OS
         unset(
             $data['customer_name'], $data['customer_document'], $data['customer_phone'], $data['customer_email'],
-            $data['device_type_id'], $data['device_brand_id'], $data['device_model']
+            $data['device_type_id'], $data['device_brand_id'], $data['device_model'], $data['device_serial_number'] // Incluído aqui
         );
 
         return $data;
