@@ -11,8 +11,6 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Http;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use App\Models\Customer;
 use Closure;
 
@@ -29,6 +27,7 @@ class CustomerForm
                     ->default('PF'),
 
                 Section::make('Informações do Cliente')
+                    ->columnSpanFull()
                     ->columns(2)
                     ->schema([
                         TextInput::make('name')
@@ -53,8 +52,19 @@ class CustomerForm
                             ->mask(RawJs::make(<<<'JS'
                                 $input.length > 14 ? '99.999.999/9999-99' : '999.999.999-99'
                             JS))
+                            ->formatStateUsing(function (?string $state) {
+                                if (!$state) return null;
+                                $somenteNumeros = preg_replace('/[^0-9]/', '', $state);
+                                if (strlen($somenteNumeros) === 11) {
+                                    return preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $somenteNumeros);
+                                }
+                                if (strlen($somenteNumeros) === 14) {
+                                    return preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $somenteNumeros);
+                                }
+                                return $state;
+                            })
                             ->dehydrateStateUsing(fn ($state) => $state ? preg_replace('/[^0-9]/', '', $state) : null)
-                            ->afterStateUpdated(function (Set $set, ?string $state) {
+                            ->afterStateUpdated(function ($set, ?string $state) {
                                 if ($state) {
                                     $somenteNumeros = preg_replace('/[^0-9]/', '', (string) $state);
                                     $set('customer_type', strlen($somenteNumeros) > 11 ? 'PJ' : 'PF');
@@ -64,9 +74,30 @@ class CustomerForm
                         TextInput::make('phone')
                             ->label('Telefone / WhatsApp')
                             ->tel()
+                            ->rules([
+                                'celular_com_ddd',
+                                fn (?Model $record) => function (string $attribute, $value, Closure $fail) use ($record) {
+                                    $somenteNumeros = preg_replace('/[^0-9]/', '', $value);
+                                    $existe = Customer::where('phone', $somenteNumeros)
+                                        ->when($record, fn ($query) => $query->where('id', '!=', $record->id))
+                                        ->exists();
+                                    if ($existe) { $fail('Este Telefone já está cadastrado.'); }
+                                },
+                            ])
                             ->mask(RawJs::make(<<<'JS'
                                 $input.length >= 15 ? '(99) 99999-9999' : '(99) 9999-9999'
                             JS))
+                            ->formatStateUsing(function (?string $state) {
+                                if (!$state) return null;
+                                $somenteNumeros = preg_replace('/[^0-9]/', '', $state);
+                                if (strlen($somenteNumeros) === 11) {
+                                    return preg_replace('/(\d{2})(\d{5})(\d{4})/', '($1) $2-$3', $somenteNumeros);
+                                }
+                                if (strlen($somenteNumeros) === 10) {
+                                    return preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $somenteNumeros);
+                                }
+                                return $state;
+                            })
                             ->dehydrateStateUsing(fn ($state) => $state ? preg_replace('/[^0-9]/', '', $state) : null),
 
                         TextInput::make('email')
@@ -75,7 +106,8 @@ class CustomerForm
                             ->columnSpanFull(),
                     ]),
 
-                Section::make('Endereço')
+                Section::make('Endereço e Localização')
+                    ->columnSpanFull()
                     ->schema([
                         Repeater::make('addresses')
                             ->relationship('addresses')
@@ -83,14 +115,19 @@ class CustomerForm
                             ->addActionLabel('Adicionar Endereço')
                             ->defaultItems(1)
                             ->collapsible()
+                            ->collapsed(fn (string $operation) => $operation === 'edit')
+                            ->itemLabel(fn (array $state): ?string => $state['street'] ?? null ? "{$state['street']}, {$state['number']}" : 'Novo Endereço')
                             ->schema([
-                                Hidden::make('tenant_id')->default(fn () => auth()->user()->tenant_id ?? 1),
+                                Hidden::make('tenant_id')
+                                    ->default(fn () => auth()->user()->tenant_id ?? 1)
+                                    ->dehydrated(),
 
                                 Grid::make(3)->schema([
                                     TextInput::make('zip_code')
                                         ->label('CEP')
                                         ->mask('99999-999')
                                         ->live(onBlur: true)
+                                        // CORREÇÃO: Sem 'Get' e 'Set' nos parâmetros
                                         ->afterStateUpdated(function ($get, $set, ?string $state) {
                                             $cep = preg_replace('/[^0-9]/', '', (string)$state);
                                             if (strlen($cep) !== 8) return;
@@ -98,16 +135,15 @@ class CustomerForm
                                             $response = Http::get("https://viacep.com.br/ws/{$cep}/json/");
                                             if ($response->successful() && !$response->json('erro')) {
                                                 $data = $response->json();
-                                                
                                                 $set('street', $data['logradouro'] ?? null);
                                                 $set('neighborhood', $data['bairro'] ?? null);
                                                 $set('city', $data['localidade'] ?? null);
                                                 $set('state', $data['uf'] ?? null);
                                             }
-                                        }),
-                                        // ->dehydrateStateUsing(fn ($state) => $state ? preg_replace('/[^0-9]/', '', $state) : null),
+                                        })
+                                        ->dehydrateStateUsing(fn ($state) => $state ? preg_replace('/[^0-9]/', '', $state) : null),
                                     
-                                    TextInput::make('street')->label('Rua')->required()->columnSpan(2),
+                                    TextInput::make('street')->label('Rua/Avenida')->required()->columnSpan(2),
                                 ]),
                                 Grid::make(3)->schema([
                                     TextInput::make('number')->label('Número')->required(),
@@ -116,7 +152,7 @@ class CustomerForm
                                 ]),
                                 Grid::make(2)->schema([
                                     TextInput::make('city')->label('Cidade')->required(),
-                                    TextInput::make('state')->label('Estado')->required(),
+                                    TextInput::make('state')->label('Estado (UF)')->length(2)->required(),
                                 ]),
                             ])
                             ->columnSpanFull(),
