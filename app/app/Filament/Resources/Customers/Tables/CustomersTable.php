@@ -17,18 +17,19 @@ class CustomersTable
     {
         return $table
             ->columns([
-                TextColumn::make('tenant.id')
-                    ->searchable(),
+                // TextColumn::make('tenant.id')
+                //     ->searchable(),
                 TextColumn::make('name')
+                    ->label('Nome')
                     ->searchable(),
                 TextColumn::make('document')
+                    ->label('CPF / CNPJ')
                     ->searchable(),
                 TextColumn::make('phone')
+                    ->label('Telefone')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('customer_type')
+                    ->label('Email')
                     ->searchable(),
                 TextColumn::make('deleted_at')
                     ->dateTime()
