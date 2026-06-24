@@ -18,6 +18,10 @@ class DeviceResource extends Resource
 {
     protected static ?string $model = Device::class;
 
+    protected static ?string $navigationLabel = 'Aparelhos';
+    protected static ?string $pluralModelLabel = 'Aparelhos';
+    protected static ?string $modelLabel = 'Aparelho';
+    protected static string|\UnitEnum|null $navigationGroup = 'Cadastros'; 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'model';
