@@ -12,8 +12,9 @@ class DatabaseSeeder extends Seeder
             TenantSeeder::class,
             UserSeeder::class,
             ServiceOrderStatusSeeder::class,
-            DeviceTypeSeeder::class,   // <-- Novo
-            DeviceBrandSeeder::class,  // <-- Novo
+            DeviceTypeSeeder::class,
+            DeviceBrandSeeder::class,
+            ServiceModalitySeeder::class,
         ]);
     }
 }

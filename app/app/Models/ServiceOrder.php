@@ -28,4 +28,14 @@ class ServiceOrder extends Model
     {
         return $this->hasMany(ServiceOrderPart::class);
     }
+
+    public function modality()
+    {
+        return $this->belongsTo(ServiceModality::class, 'service_modality_id');
+    }
+
+    public function customerAddress()
+    {
+        return $this->belongsTo(CustomerAddress::class, 'customer_address_id');
+    }
 }
