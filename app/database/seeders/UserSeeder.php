@@ -11,10 +11,10 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'tenant_id' => 1, // Vinculado ao tenant criado no passo anterior
+            'tenant_id' => 1,
             'name' => 'Luciano',
             'email' => 'admin@admin.com',
-            'password' => Hash::make('12345'), // Mude para a senha que desejar testar
+            'password' => Hash::make('12345'),
             'role' => 'admin',
         ]);
     }
