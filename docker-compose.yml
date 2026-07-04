@@ -9,7 +9,7 @@ services:
     container_name: app_php
     working_dir: /var/www
     ports:
-      - "5173:5173"
+      - "5173:5173" 
     volumes:
       - ./app:/var/www
     networks:
