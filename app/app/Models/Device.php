@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\ServiceOrder;
 
 class Device extends Model
 {
@@ -34,5 +36,10 @@ class Device extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(DeviceBrand::class, 'device_brand_id');
+    }
+
+    public function serviceOrders(): HasMany
+    {
+        return $this->hasMany(ServiceOrder::class);
     }
 }
