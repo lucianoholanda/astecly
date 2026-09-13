@@ -18,14 +18,6 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     /** Configuração para o Cloudflare */
-
-    public function boot(): void
-    {
-        if (request()->header('X-Forwarded-Proto') === 'https') {
-            \Illuminate\Support\Facades\URL::forceScheme('https');
-        }
-    }
-
     public function boot(): void
     {
         if (request()->header('X-Forwarded-Proto') === 'https') {
