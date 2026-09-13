@@ -17,8 +17,12 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
+    /** Configuração para o Cloudflare */
     public function boot(): void
     {
-        //
-    }
+        if (config('app.env') !== 'local') {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+            $this->app['request']->server->set('HTTPS', 'on');
+        }
+}
 }
