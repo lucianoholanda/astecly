@@ -6,12 +6,14 @@ services:
       dockerfile: php.dockerfile
       args:
         - PHP_VERSION=8.3
-    container_name: app_php
+    container_name: astecly_php
+    restart: unless-stopped
     working_dir: /var/www
     ports:
       - "5173:5173" 
     volumes:
       - ./app:/var/www
+      - /mnt/data/astecly/storage:/var/www/storage/app/public
     networks:
       - app-network
 
@@ -19,10 +21,12 @@ services:
     build:
       context: ./docker/services/nginx
       dockerfile: nginx.dockerfile
-    container_name: app_nginx
+    container_name: astecly_nginx
+    restart: unless-stopped
     working_dir: /var/www
     volumes:
       - ./app:/var/www
+      - /mnt/data/astecly/storage:/var/www/storage/app/public
     ports:
       - '80:80'
     depends_on:
@@ -32,7 +36,7 @@ services:
 
   database:
     image: mariadb:11.4
-    container_name: app_db
+    container_name: astecly_db
     restart: unless-stopped
     volumes:
       - ./docker/volumes/mysql:/var/lib/mysql
@@ -53,13 +57,13 @@ services:
 
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: app_pma
+    container_name: astecly_pma
+    restart: unless-stopped
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOST=database
     depends_on:
-      database:
-        condition: service_healthy
+      - database
     ports:
       - '8888:80'
     networks:
@@ -67,7 +71,8 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: app_redis
+    container_name: astecly_redis
+    restart: unless-stopped
     volumes:
       - ./docker/volumes/redis:/data
     networks:

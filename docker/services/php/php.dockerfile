@@ -36,8 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Instalar Node.js 20.x e npm
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+# Instalar Node.js 20.x e dependências (Correção do gnupg)
+RUN apt-get update && apt-get install -y gnupg ca-certificates \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g npm@latest \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
