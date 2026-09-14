@@ -1,2 +1,1 @@
-*
-!.gitignore
+echo -e "*\n!.gitignore" > storage/logs/.gitignore
