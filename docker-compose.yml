@@ -1,5 +1,4 @@
 services:
-
   php:
     build:
       context: ./docker/services/php
@@ -19,6 +18,7 @@ services:
     volumes:
       - ./app:/var/www
       - /mnt/data/astecly/storage:/var/www/storage/app/public
+      - php-socket:/var/run/php-fpm
     networks:
       - app-network
 
@@ -29,9 +29,15 @@ services:
     container_name: astecly_nginx
     restart: unless-stopped
     working_dir: /var/www
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - ./app:/var/www
       - /mnt/data/astecly/storage:/var/www/storage/app/public
+      - php-socket:/var/run/php-fpm
     ports:
       - '80:80'
     depends_on:
@@ -65,24 +71,13 @@ services:
       timeout: 5s
       retries: 5
 
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: astecly_pma
-    restart: unless-stopped
-    environment:
-      - PMA_ARBITRARY=1
-      - PMA_HOST=database
-    depends_on:
-      - database
-    ports:
-      - '8888:80'
-    networks:
-      - app-network
-
   redis:
     image: redis:7-alpine
     container_name: astecly_redis
     restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
     volumes:
       - ./docker/volumes/redis:/data
     networks:
@@ -91,3 +86,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  php-socket:
